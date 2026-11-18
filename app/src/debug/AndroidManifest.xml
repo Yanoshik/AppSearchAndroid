@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <application
+        android:label="App Search 2.0 TEST"
+        android:icon="@drawable/ic_app_search_test"
+        tools:replace="android:label,android:icon" />
+</manifest>
