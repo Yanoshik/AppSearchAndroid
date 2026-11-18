@@ -49,7 +49,7 @@ class MainActivity : Activity() {
 
         search = EditText(this).apply {
             hint = "Unesi naziv aplikacije..."
-            singleLine = true
+            isSingleLine = true
             textSize = 16f
             setPadding(dp(14), dp(12), dp(14), dp(12))
             setBackgroundColor(0xFFFFFFFF.toInt())
