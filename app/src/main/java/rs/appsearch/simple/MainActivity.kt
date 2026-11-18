@@ -71,7 +71,7 @@ class MainActivity : Activity() {
         page.addView(tabs)
 
         appsScreen = AppsScreen(this)
-        filesScreen = FilesScreen(this)
+        filesScreen = FilesScreen(this).apply { visibility = View.GONE }
         page.addView(appsScreen, LinearLayout.LayoutParams(-1, 0, 1f))
         page.addView(filesScreen, LinearLayout.LayoutParams(-1, 0, 1f))
         setContentView(page)
