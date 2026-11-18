@@ -1,4 +1,3 @@
-
 name: Build App Search APK
 
 on:
@@ -8,38 +7,78 @@ permissions:
   contents: read
 
 jobs:
-  build:
+  build-test:
+    if: github.ref == 'refs/heads/develop/app-search-2.0'
     runs-on: ubuntu-latest
     steps:
       - name: Preuzmi izvorni kod
         uses: actions/checkout@v4
-
       - name: Podesi Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
-
-     
       - name: Instaliraj Android SDK 36
         run: |
           SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
           yes | "$SDKMANAGER" --licenses || true
           "$SDKMANAGER" "platforms;android-36" "build-tools;36.0.0"
-
-
       - name: Podesi Gradle 8.11.1
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.11.1'
-
-      - name: Izgradi APK
+      - name: Proveri testne tajne
+        env:
+          TEST_KEYSTORE_B64: ${{ secrets.APPSEARCH_TEST_KEYSTORE_B64 }}
+          TEST_STORE_PASSWORD: ${{ secrets.APPSEARCH_TEST_STORE_PASSWORD }}
+          TEST_KEY_PASSWORD: ${{ secrets.APPSEARCH_TEST_KEY_PASSWORD }}
+          TEST_KEY_ALIAS: ${{ secrets.APPSEARCH_TEST_KEY_ALIAS }}
+          TEST_CERT_SHA256: ${{ secrets.APPSEARCH_TEST_CERT_SHA256 }}
+        shell: bash
+        run: |
+          for secret in TEST_KEYSTORE_B64 TEST_STORE_PASSWORD TEST_KEY_PASSWORD TEST_KEY_ALIAS TEST_CERT_SHA256; do
+            if [ -z "${!secret}" ]; then
+              echo "::error::Nedostaje GitHub Actions secret: $secret"
+              exit 1
+            fi
+          done
+      - name: Vrati testni keystore za izgradnju
+        env:
+          TEST_KEYSTORE_B64: ${{ secrets.APPSEARCH_TEST_KEYSTORE_B64 }}
+        shell: bash
+        run: |
+          umask 077
+          printf '%s' "$TEST_KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/appsearch-test.jks"
+          test -s "$RUNNER_TEMP/appsearch-test.jks"
+      - name: Izgradi testni APK
+        env:
+          APPSEARCH_TEST_KEYSTORE_PATH: ${{ runner.temp }}/appsearch-test.jks
+          APPSEARCH_TEST_STORE_PASSWORD: ${{ secrets.APPSEARCH_TEST_STORE_PASSWORD }}
+          APPSEARCH_TEST_KEY_PASSWORD: ${{ secrets.APPSEARCH_TEST_KEY_PASSWORD }}
+          APPSEARCH_TEST_KEY_ALIAS: ${{ secrets.APPSEARCH_TEST_KEY_ALIAS }}
         run: gradle --no-daemon assembleDebug
-
-      - name: Sacuvaj APK za preuzimanje
+      - name: Proveri APK potpis
+        env:
+          TEST_CERT_SHA256: ${{ secrets.APPSEARCH_TEST_CERT_SHA256 }}
+        shell: bash
+        run: |
+          APK="app/build/outputs/apk/debug/app-debug.apk"
+          APKSIGNER="$ANDROID_HOME/build-tools/36.0.0/apksigner"
+          "$APKSIGNER" verify --verbose --print-certs "$APK" > "$RUNNER_TEMP/apk-signature.txt"
+          ACTUAL=$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' "$RUNNER_TEMP/apk-signature.txt" | head -n 1 | tr -d ':' | tr '[:upper:]' '[:lower:]')
+          EXPECTED=$(printf '%s' "$TEST_CERT_SHA256" | tr -d ':' | tr '[:upper:]' '[:lower:]')
+          if [ -z "$ACTUAL" ] || [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "::error::TEST APK nema očekivani sertifikat"
+            exit 1
+          fi
+          echo "TEST APK ima očekivani potpis"
+      - name: Sacuvaj potpisan TEST APK
         uses: actions/upload-artifact@v4
         with:
-          name: App-Search-APK
+          name: App-Search-2.0-TEST-APK
           path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 7
+      - name: Obrisi privremeni keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/appsearch-test.jks"
