@@ -9,6 +9,7 @@
     <application
         android:allowBackup="false"
         android:label="App Search"
+        android:icon="@drawable/ic_app_search"
         android:theme="@android:style/Theme.Material.Light.NoActionBar"
         android:supportsRtl="true">
         <activity
