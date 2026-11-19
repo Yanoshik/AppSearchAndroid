@@ -2,7 +2,6 @@ package rs.appsearch.simple.files
 
 import android.Manifest
 import android.app.Activity
-import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.provider.MediaStore
@@ -69,11 +68,20 @@ class FileAccessManager(private val activity: Activity) {
             if (!probe(uri)) return "Nedostupno"
             return if (full) "Odobren" else "Ograničen izbor"
         }
+        val images = if (Build.VERSION.SDK_INT >= 29)
+            MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
+        else MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+        val videos = if (Build.VERSION.SDK_INT >= 29)
+            MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
+        else MediaStore.Video.Media.EXTERNAL_CONTENT_URI
+        val audio = if (Build.VERSION.SDK_INT >= 29)
+            MediaStore.Audio.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
+        else MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
         return MediaState(
-            visual(Manifest.permission.READ_MEDIA_IMAGES, MediaStore.Images.Media.EXTERNAL_CONTENT_URI),
-            visual(Manifest.permission.READ_MEDIA_VIDEO, MediaStore.Video.Media.EXTERNAL_CONTENT_URI),
+            visual(Manifest.permission.READ_MEDIA_IMAGES, images),
+            visual(Manifest.permission.READ_MEDIA_VIDEO, videos),
             if (!granted(Manifest.permission.READ_MEDIA_AUDIO)) "Nije odobren"
-            else if (probe(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI)) "Odobren"
+            else if (probe(audio)) "Odobren"
             else "Nedostupno"
         )
     }
