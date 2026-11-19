@@ -1,8 +1,14 @@
 name: App Search - Room Phase 3.1 Emulator Tests (No Release APK)
 
-# Manual-only. This file intentionally has no push/pull_request trigger.
+# Trigger only when this workflow file changes on the approved development branch.
+# No trigger for application source pushes and no release APK upload.
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - develop/app-search-2.0
+    paths:
+      - .github/workflows/app-search-room-emulator-test.yml
 
 permissions:
   contents: read
