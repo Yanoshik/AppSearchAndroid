@@ -44,7 +44,7 @@ interface FileIndexDao {
     @Query("SELECT COUNT(*) FROM indexed_files WHERE sourceId = :sourceId")
     suspend fun indexedCountForSource(sourceId: String): Long
 
-    @Query("DELETE FROM indexed_files WHERE sourceId = :sourceId AND lastSeenScanId != :scanId")
+    @Query("DELETE FROM indexed_files WHERE sourceId = :sourceId AND (lastSeenScanId IS NULL OR lastSeenScanId != :scanId)")
     suspend fun deleteUnseen(sourceId: String, scanId: String): Int
 
     /** Future scan coordinator must call this only after a fully successful source scan. */
