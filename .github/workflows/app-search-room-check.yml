@@ -2,6 +2,11 @@ name: App Search - Room Phase 3.1 Check (No APK)
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - develop/app-search-2.0
+    paths:
+      - .github/workflows/app-search-room-check.yml
 
 permissions:
   contents: read
